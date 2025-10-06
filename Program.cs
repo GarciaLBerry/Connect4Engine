@@ -1,31 +1,24 @@
 ﻿namespace NotAnotherNameSpaceName
-{
-    // Online C# Editor for free
-    // Write, Edit and Run your C# code using C# Online Compiler
-
+{   
     using System;
     using System.Collections.Generic;
-
     public class HelloWorld
     {
-        //Note to the Editor: write Minimizer and Maximizer 
-        //Note to the Editor: Implement shallow reference in Position to parent position (They are useful)
-        //Evaluation should work backwards through the tree to minimize opponent's advantage and maximize personal advantage
+        //Position represents the board and tracks it's contents, including the locations of X's and O's
         public class Position
         {
-            public char[,] grid = new char[7, 6];
-            public int evaluation;
-            public int lastPlayedMoveX;
-            public int lastPlayedMoveY;
-            public bool lastPlayerIsX = false;
-            public int numMovesPlayed;
-            public List<int> movesPlayed = new List<int>();
-            public List<Position> children = new List<Position>();
-            public Position parent;//Shallow References
-            public Position bestOffShoot;
-            //X = X
-            //O = O
-            //_ = Blank
+            private char[,] grid = new char[7, 6];
+            private int evaluation;
+            private int lastPlayedMoveX;
+            private int lastPlayedMoveY;
+            private bool lastPlayerIsX = false;
+            private int numMovesPlayed;
+            private List<int> movesPlayed = new List<int>();
+            private List<Position> children = new List<Position>();
+            private Position parent;
+            private Position bestOffShoot;
+            
+            //Declares a blank Position, using '_' as empty spaces
             public Position()
             {
                 for (int i = 0; i < grid.GetLength(0); i++)
@@ -36,10 +29,14 @@
                     }
                 }
             }
+            
+            //Declares a position that is a copy of the char[,] provided
             public Position(char[,] toGrid)
             {
                 grid = toGrid;
             }
+            
+            //Declares a position with all data provided
             public Position(char[,] toGrid, int _lastPlayedMoveX, int _lastPlayedMoveY, bool _lastPlayerIsX, int _numMovesPlayed, List<int> _movesPlayed)
             {
                 grid = toGrid;
@@ -56,6 +53,8 @@
                     Console.WriteLine(movesPlayed.Count > numMovesPlayed);
                 }
             }
+            
+            //Returns an array of booleans representing the top slots in the board, with true for a move that is playable
             public bool[] GetPlayableMoves()
             {
                 bool[] toReturn = new bool[7];
@@ -68,6 +67,8 @@
                 }
                 return toReturn;
             }
+            
+            //Prints the boardstate, including numbers at the bottom representing each column
             public void PrintPosition()
             {
                 for (int i = 0; i < grid.GetLength(1); i++)
@@ -90,6 +91,9 @@
                 Console.WriteLine("==============");
                 Console.WriteLine("0 1 2 3 4 5 6 ");
             }
+            
+            //Takes in the x position, y position, and player of a move
+            //Returns true if the move would win that player the game and false otherwise
             public bool IsWinningMove(int xPos, int yPos, bool isX)
             {
                 //CheckHorizontal
@@ -275,6 +279,9 @@
                 }
                 return false;
             }
+            
+            //Takes in the x position, y position, and player of a move
+            //Returns the number of connections to other adjacent pieces that move would have
             public int numConnections(int xPos, int yPos, bool isX)
             {
                 //CheckHorizontal
@@ -445,6 +452,8 @@
                 //Console.WriteLine($"{numDownLeft} {numDownRight} {numToLeft} {numToRight} {numUpwards} {numDownwards} {isX}");
                 return numDownLeft + numDownRight + numToLeft + numToRight + numUpwards + numDownwards + numRightUp + numUpLeft;
             }
+            
+            //Returns the total number of connections between pieces that a player has
             public int totalNumConnections(bool isX)
             {
                 char charChecker = ' ';
@@ -469,6 +478,9 @@
                 }
                 return toReturn;
             }
+            
+            //Takes in the board slot and player of a move
+            //Returns true if the move would win that player the game and false otherwise
             public bool IsWinningMove(int xPos, bool isX)
             {
                 int yPos = 0;
@@ -481,11 +493,17 @@
                 }
                 return IsWinningMove(xPos, yPos, isX);
             }
+            
+            //Returns true if the last move just won that player the game
             public bool DidJustWin()
             {
                 return IsWinningMove(lastPlayedMoveX, lastPlayedMoveY, lastPlayerIsX);
             }
-            public bool TogglePosition(int slot, bool isX) //Num 0-7
+            
+            //Takes in the board slot and player of a move
+            //Changes the bottom cell in that slot to the represent that player's piece
+            //Returns false if the move is illegal and true otherwise
+            public bool TogglePosition(int slot, bool isX)
             {
                 for (int i = 5; i >= 0; i--)
                 {
@@ -523,6 +541,8 @@
                 }
                 return false;
             }
+            
+            //Returns a deep copy of the position
             public char[,] ClonePosition()
             {
                 char[,] toReturn = new char[7, 6];
@@ -535,6 +555,8 @@
                 }
                 return toReturn;
             }
+            
+            //Returns a deep copy of the move transcript
             public List<int> CloneMovesPlayed()
             {
                 List<int> toReturn = new List<int>();
@@ -544,6 +566,8 @@
                 }
                 return toReturn;
             }
+            
+            //Returns true if the active player can win on the next move and false otherwise
             public bool CanWinOnNextMove()
             {
                 for (int i = 0; i < GetPlayableMoves().Length; i++)
@@ -560,7 +584,9 @@
                 }
                 return false;
             }
-            public int EvaluationForX() //Always Returns the value for the Player with the X pieces, Positive is better for X
+            
+            //Calculates and returns the evaluation for the X pieces in the current position (Positive is better)
+            public int EvaluationForX()
             {
                 int modifier = 0;
                 int toReturn = 0;
@@ -601,57 +627,121 @@
                 evaluation = toReturn;
                 return toReturn;
             }
+            
+            //Returns the evaluation for the current position
+            //(Make sure it has already been calculated before using this function)
+            public int GetEvaluation()
+            {
+                return evaluation;
+            }
+            
+            //Returns True if the last move was played by X and false otherwise
+            public bool IsLastPlayerX()
+            {
+                return lastPlayerIsX;
+            }
+            
+            //Returns the Position that represents the parent in the decision tree of this position
+            public Position GetParent()
+            {
+                return parent;
+            }
+            
+            //Returns the best child position of this position in the decision tree 
+            public Position GetBestOffShoot()
+            {
+                return bestOffShoot;
+            }
+            
+            //Returns the full list of children in the decision tree from this position
+            public List<Position> GetChildren()
+            {
+                return children;
+            }
+            
+            //Returns the last move that the X player played
+            public int GetLastXMove()
+            {
+                return lastPlayedMoveX;
+            }
+            
+            //Returns the last move that the Y player played
+            public int GetLastYMove()
+            {
+                return lastPlayedMoveY;
+            }
+            
+            //Returns the total number of moves that have been played
+            public int GetNumMovesPlayed()
+            {
+                return numMovesPlayed;
+            }
+            
+            //Sets the best offshoot of this position in the decision tree
+            public void SetBestOffShoot(Position input)
+            {
+                bestOffShoot = input;
+            }
+            
+            //Sets the evaluation of this position
+            public void SetEvaluation(int eval)
+            {
+                evaluation = eval;
+            }
+            
+            //Gives this position a reference to it's parent position
+            public void SetParent(Position input)
+            {
+                parent = input;
+            }
+            
+            //Gives this position a reference to the list of it's children
+            public void SetChildren(List<Position> input)
+            {
+                children = input;
+            }
         }
+        
+        //Takes in a position
+        //Returns the Position that has the lowest evaluation out of that position's children
         public static Position minimizer(Position inPosition)
         {
-            List<Position> branches = inPosition.children;
+            List<Position> branches = inPosition.GetChildren();
             Position lowest = branches[0];
             int lowestEval = int.MaxValue;
             for (int i = 0; i < branches.Count; i++)
             {
-                int currentEval = branches[i].evaluation;
-                //Console.Write($"{currentEval}, ");
-                //if (Math.Abs(currentEval) > 6)
-                //{
-                  //  branches[i].PrintPosition();
-                  //  Console.WriteLine(currentEval);
-                //}
+                int currentEval = branches[i].GetEvaluation();
                 if (currentEval < lowestEval)
                 {
                     lowest = branches[i];
                     lowestEval = currentEval;
                 }
             }
-            //Console.WriteLine($"Low: {lowestEval}  This Should be the Same Number = {lowest.evaluation}");
             return lowest;
         }
+
+        //Takes in a position
+        //Returns the position that has the highest evaluation out of that position's children
         public static Position maximizer(Position inPosition)
         {
-            List<Position> branches = inPosition.children;
+            List<Position> branches = inPosition.GetChildren();
             Position highest = branches[0];
             int highestEval = int.MinValue;
             for (int i = 0; i < branches.Count; i++)
             {
-                int currentEval = branches[i].evaluation;
-                //Console.Write($"{currentEval}, ");
-                //if (Math.Abs(currentEval) > 6)
-                //{
-                 //   branches[i].PrintPosition();
-                  //  Console.WriteLine(currentEval);
-                //}
+                int currentEval = branches[i].GetEvaluation();
                 if (currentEval > highestEval)
                 {
-                    //if(highestEval != int.MinValue)
-                    //{
-                    //    Console.WriteLine($"Old Highest: {highestEval} New Highest: {currentEval}");
-                    //}
                     highest = branches[i];
                     highestEval = currentEval;
                 }
             }
-            //Console.WriteLine($"Highest: {highestEval} This Should be the Same Number = {highest.evaluation} ");
             return highest;
         }
+
+        //Takes in List of Positions, the depth to iterate to, and the current player
+        //Generates and returns all possible Positions that could occur after (depth) moves
         public static List<Position> fullNextGeneration(List<Position> tree, int depth, bool isX)
         {
             List<Position> toReturn = new List<Position>();
@@ -672,15 +762,18 @@
                 return toReturn;
             }
         }
+
+        //Takes in a position and the current player's move
+        //Returns every possible position that could occur after that move
         public static List<Position> newGeneration(Position inPosition, bool isX)
         {
             List<Position> toReturn = new List<Position>();
             if(inPosition.DidJustWin())
             {
                 bool needsToBeAdded = true;
-                for(int i = 0; i < inPosition.parent.children.Count; i++)
+                for(int i = 0; i < inPosition.GetParent().GetChildren().Count; i++)
                 {
-                    if(inPosition == inPosition.parent.children[i])
+                    if(inPosition == inPosition.GetParent().GetChildren()[i])
                     {
                         needsToBeAdded = false;
                         //Console.WriteLine("This should happen at least once");
@@ -688,7 +781,7 @@
                 }
                 if(needsToBeAdded)
                 {
-                    inPosition.parent.children.Add(inPosition);
+                    inPosition.GetParent().GetChildren().Add(inPosition);
                 }
                 toReturn.Add(inPosition);
                 return toReturn;
@@ -697,20 +790,23 @@
             {
                 if (inPosition.GetPlayableMoves()[i])
                 {
-                    Position toAdd = new Position(inPosition.ClonePosition(), inPosition.lastPlayedMoveX, inPosition.lastPlayedMoveY, !isX, inPosition.numMovesPlayed, inPosition.CloneMovesPlayed());
-                    if (isX == toAdd.lastPlayerIsX)
+                    Position toAdd = new Position(inPosition.ClonePosition(), inPosition.GetLastXMove(), inPosition.GetLastYMove(), !isX, inPosition.GetNumMovesPlayed(), inPosition.CloneMovesPlayed());
+                    if (isX == toAdd.IsLastPlayerX())
                     {
                         Console.WriteLine("This should never happen x2");
                     }
                     toAdd.TogglePosition(i, isX);
-                    toAdd.parent = inPosition;
+                    toAdd.SetParent(inPosition);
                     toReturn.Add(toAdd);
                 }
             }
-            inPosition.children = toReturn;
+            inPosition.SetChildren(toReturn);
             return toReturn;
         }
-        public static int bestMoveInPosition(Position inPosition, bool isX, int depth, int nextMoveNumber)
+
+        //Takes in a Position, the current player, and the amount of moves in the future to look 
+        //Returns the best slot for the current player to play in
+        public static int bestMoveInPosition(Position inPosition, bool isX, int depth)
         {
             //isActivePlayerAtEndOfTree
             List<Position> tree = fullNextGeneration(newGeneration(inPosition, isX), depth, !isX);
@@ -720,7 +816,7 @@
             for(int i = 0; i < tree.Count; i++)
             {
                 int eval = tree[i].EvaluationForX();
-                if (eval != tree[i].evaluation)
+                if (eval != tree[i].GetEvaluation())
                 {
                     Console.WriteLine("This should never happen x3");
                 }
@@ -732,20 +828,20 @@
                 List<Position> toFocusGen = new List<Position>();
                 for (int j = 0; j < focusGen.Count; j++)
                 {
-                    if(focusGen[j].parent == null)
+                    if(focusGen[j].GetParent() == null)
                     {
                         toFocusGen.Add(focusGen[j]);
                         continue;
                     }
-                    if (parents.Add(focusGen[j].parent))
+                    if (parents.Add(focusGen[j].GetParent()))
                     {
-                        toFocusGen.Add(focusGen[j].parent);
+                        toFocusGen.Add(focusGen[j].GetParent());
                     }
                 }
                 for (int j = 0; j < parents.Count; j++)
                 {
                     Position chosenOffShoot = null;
-                    if (toFocusGen[j].lastPlayerIsX)
+                    if (toFocusGen[j].IsLastPlayerX())
                     {
                        chosenOffShoot = minimizer(toFocusGen[j]);
                        //Console.Write("Min ");
@@ -755,23 +851,23 @@
                         chosenOffShoot = maximizer(toFocusGen[j]);
                         //Console.Write("Max ");
                     }
-                    toFocusGen[j].evaluation = chosenOffShoot.evaluation;
-                    toFocusGen[j].bestOffShoot = chosenOffShoot;
+                    toFocusGen[j].SetEvaluation(chosenOffShoot.GetEvaluation());
+                    toFocusGen[j].SetBestOffShoot(chosenOffShoot);
                     //Console.WriteLine($"Eval: {toFocusGen[j].evaluation} At {depth - i}");
                 }
                 focusGen = toFocusGen;
             }
-            return inPosition.bestOffShoot.lastPlayedMoveX;
+            return inPosition.GetBestOffShoot().GetLastXMove();
         }
+        
+        //Runs the program
         public static void Main(string[] args)
         {
             Position truePosition = new Position();
             bool turn = true;
-            while (!truePosition.IsWinningMove(truePosition.lastPlayedMoveX, truePosition.lastPlayedMoveY, truePosition.lastPlayerIsX))
+            while (!truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
             {
                 truePosition.PrintPosition();
-                //Console.WriteLine($"Evaluation: {truePosition.evaluation}");
-                //Console.WriteLine($"Connections O: {truePosition.totalNumConnections(false)} Connections X: {truePosition.totalNumConnections(true)}");
                 Console.WriteLine("Play a Move");
                 string response = Console.ReadLine();
                 bool selectMode = false;
@@ -791,14 +887,14 @@
                 if(selectMode)
                 {
                     truePosition.PrintPosition();
-                    Console.WriteLine($"Dave Reccomends: {bestMoveInPosition(truePosition, turn, 5, truePosition.numMovesPlayed + 1)}");
-                    Console.WriteLine($"Evaluation: +{truePosition.evaluation}");
+                    Console.WriteLine($"Dave Reccomends: {bestMoveInPosition(truePosition, turn, 5)}");
+                    Console.WriteLine($"Evaluation: +{truePosition.GetEvaluation()}");
                     response = Console.ReadLine();
                 }
                 int move = Int32.Parse(response);
                 truePosition.TogglePosition(move, turn);
                 turn = !turn;
-                if(selectMode && truePosition.IsWinningMove(truePosition.lastPlayedMoveX, truePosition.lastPlayedMoveY, truePosition.lastPlayerIsX))
+                if(selectMode && truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
                 {
                     truePosition.PrintPosition();
                     Console.WriteLine($"Evaluation: {truePosition.EvaluationForX()} Does The Engine Know The Game Is Over: {truePosition.DidJustWin()}");
@@ -806,21 +902,21 @@
                 if (!selectMode)
                 {
                     truePosition.PrintPosition();
-                    if (truePosition.IsWinningMove(truePosition.lastPlayedMoveX, truePosition.lastPlayedMoveY, truePosition.lastPlayerIsX))
+                    if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
                     {
                         Console.WriteLine("Game Over");
                         return;
                     }
-                    if (turn == truePosition.lastPlayerIsX)
+                    if (turn == truePosition.IsLastPlayerX())
                     {
                         Console.WriteLine("This should never happen x1");
                     }
                     Console.WriteLine("The Bot Will Now Play Their Move");
-                    move = bestMoveInPosition(truePosition, turn, 5, truePosition.numMovesPlayed + 1);
+                    move = bestMoveInPosition(truePosition, turn, 5);
                     Console.WriteLine(move);
                     truePosition.TogglePosition(move, turn);
                     turn = !turn;
-                    if (truePosition.IsWinningMove(truePosition.lastPlayedMoveX, truePosition.lastPlayedMoveY, truePosition.lastPlayerIsX))
+                    if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
                     {
                         truePosition.PrintPosition();
                         Console.WriteLine("Game Over");
