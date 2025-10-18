@@ -48,10 +48,6 @@
                 {
                     movesPlayed.Add(_movesPlayed[i]);
                 }
-                if (movesPlayed.Count > numMovesPlayed)
-                {
-                    Console.WriteLine(movesPlayed.Count > numMovesPlayed);
-                }
             }
             
             //Returns an array of booleans representing the top slots in the board, with true for a move that is playable
@@ -449,7 +445,6 @@
                         break;
                     }
                 }
-                //Console.WriteLine($"{numDownLeft} {numDownRight} {numToLeft} {numToRight} {numUpwards} {numDownwards} {isX}");
                 return numDownLeft + numDownRight + numToLeft + numToRight + numUpwards + numDownwards + numRightUp + numUpLeft;
             }
             
@@ -517,10 +512,6 @@
                             lastPlayerIsX = true;
                             numMovesPlayed++;
                             movesPlayed.Add(i);
-                            if(movesPlayed.Count > numMovesPlayed)
-                            {
-                                Console.WriteLine(movesPlayed.Count > numMovesPlayed);
-                            }
                             return true;
                         }
                         else
@@ -531,10 +522,6 @@
                             lastPlayerIsX = false;
                             numMovesPlayed++;
                             movesPlayed.Add(i);
-                            if (movesPlayed.Count > numMovesPlayed)
-                            {
-                                Console.WriteLine(movesPlayed.Count > numMovesPlayed);
-                            }
                             return true;
                         }
                     }
@@ -586,7 +573,7 @@
             }
             
             //Calculates and returns the evaluation for the X pieces in the current position (Positive is better)
-            public int EvaluationForX()
+            public int MakeEvaluation()
             {
                 int modifier = 0;
                 int toReturn = 0;
@@ -600,16 +587,14 @@
                 }
                 if (DidJustWin())
                 {
-                    toReturn = (1000 * modifier);
+                    toReturn = (10000 * modifier) - (100 * numMovesPlayed * modifier);
                 }
                 else if (CanWinOnNextMove())
                 {
-                    toReturn = (-1000 * modifier);
+                    toReturn = (-10000 * modifier) + (100 * numMovesPlayed * modifier);
                 }
                 int numConnectionsX = totalNumConnections(true);
                 int numConnectionsO = totalNumConnections(false);
-                //Console.WriteLine($"{numConnectionsX}, {numConnectionsO}, {numConnectionsX - numConnectionsO}");
-                //PrintPosition();
                 toReturn += (numConnectionsX - numConnectionsO);
                 for (int i = 0; i < 9; i++)
                 {
@@ -776,7 +761,6 @@
                     if(inPosition == inPosition.GetParent().GetChildren()[i])
                     {
                         needsToBeAdded = false;
-                        //Console.WriteLine("This should happen at least once");
                     }
                 }
                 if(needsToBeAdded)
@@ -791,10 +775,6 @@
                 if (inPosition.GetPlayableMoves()[i])
                 {
                     Position toAdd = new Position(inPosition.ClonePosition(), inPosition.GetLastXMove(), inPosition.GetLastYMove(), !isX, inPosition.GetNumMovesPlayed(), inPosition.CloneMovesPlayed());
-                    if (isX == toAdd.IsLastPlayerX())
-                    {
-                        Console.WriteLine("This should never happen x2");
-                    }
                     toAdd.TogglePosition(i, isX);
                     toAdd.SetParent(inPosition);
                     toReturn.Add(toAdd);
@@ -815,11 +795,7 @@
             //Find Evaluations For Final Positions
             for(int i = 0; i < tree.Count; i++)
             {
-                int eval = tree[i].EvaluationForX();
-                if (eval != tree[i].GetEvaluation())
-                {
-                    Console.WriteLine("This should never happen x3");
-                }
+                int eval = tree[i].MakeEvaluation();
             }
             //Assemble Parent Nodes
             for (int i = 0; i <= depth; i++)
@@ -844,16 +820,13 @@
                     if (toFocusGen[j].IsLastPlayerX())
                     {
                        chosenOffShoot = minimizer(toFocusGen[j]);
-                       //Console.Write("Min ");
                     }
                     else
                     {
                         chosenOffShoot = maximizer(toFocusGen[j]);
-                        //Console.Write("Max ");
                     }
                     toFocusGen[j].SetEvaluation(chosenOffShoot.GetEvaluation());
                     toFocusGen[j].SetBestOffShoot(chosenOffShoot);
-                    //Console.WriteLine($"Eval: {toFocusGen[j].evaluation} At {depth - i}");
                 }
                 focusGen = toFocusGen;
             }
@@ -864,6 +837,7 @@
         public static void Main(string[] args)
         {
             Position truePosition = new Position();
+            Position oldPosition = new Position();
             bool turn = true;
             while (!truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
             {
@@ -884,43 +858,65 @@
                         turn = !turn;
                     }
                 }
-                if(selectMode)
+                if (selectMode)
                 {
                     truePosition.PrintPosition();
                     Console.WriteLine($"Dave Reccomends: {bestMoveInPosition(truePosition, turn, 5)}");
                     Console.WriteLine($"Evaluation: +{truePosition.GetEvaluation()}");
+                    for (int i = 0; i < truePosition.GetChildren().Count; i++)
+                    {
+                        Console.WriteLine($"Move {truePosition.GetChildren()[i].GetLastXMove()} is worth {truePosition.GetChildren()[i].GetEvaluation()}");
+                    }
+                    truePosition.GetBestOffShoot().PrintPosition();
                     response = Console.ReadLine();
                 }
-                int move = Int32.Parse(response);
-                truePosition.TogglePosition(move, turn);
-                turn = !turn;
-                if(selectMode && truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
+                if (response == "/undo")
                 {
-                    truePosition.PrintPosition();
-                    Console.WriteLine($"Evaluation: {truePosition.EvaluationForX()} Does The Engine Know The Game Is Over: {truePosition.DidJustWin()}");
+                    truePosition = new Position(oldPosition.ClonePosition(), oldPosition.GetLastXMove(),
+                                               oldPosition.GetLastYMove(), oldPosition.IsLastPlayerX(),
+                                               oldPosition.GetNumMovesPlayed(), oldPosition.CloneMovesPlayed());
                 }
-                if (!selectMode)
+                else if (response == "/explain")
                 {
-                    truePosition.PrintPosition();
-                    if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
-                    {
-                        Console.WriteLine("Game Over");
-                        return;
-                    }
-                    if (turn == truePosition.IsLastPlayerX())
-                    {
-                        Console.WriteLine("This should never happen x1");
-                    }
-                    Console.WriteLine("The Bot Will Now Play Their Move");
-                    move = bestMoveInPosition(truePosition, turn, 5);
-                    Console.WriteLine(move);
+                    Console.WriteLine($"Dave Reccomends: {bestMoveInPosition(oldPosition, turn, 5)}");
+                    Console.WriteLine($"Evaluation: +{oldPosition.GetEvaluation()}");
+                }
+                else
+                {
+                    int move = Int32.Parse(response);
+                    oldPosition = new Position(truePosition.ClonePosition(), truePosition.GetLastXMove(),
+                           truePosition.GetLastYMove(), truePosition.IsLastPlayerX(),
+                           truePosition.GetNumMovesPlayed(), truePosition.CloneMovesPlayed());
                     truePosition.TogglePosition(move, turn);
                     turn = !turn;
-                    if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
+                    if (selectMode && truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
                     {
                         truePosition.PrintPosition();
-                        Console.WriteLine("Game Over");
-                        return;
+                        Console.WriteLine($"Evaluation: {truePosition.MakeEvaluation()} Does The Engine Know The Game Is Over: {truePosition.DidJustWin()}");
+                    }
+                    if (!selectMode)
+                    {
+                        truePosition.PrintPosition();
+                        if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
+                        {
+                            Console.WriteLine("Game Over");
+                            return;
+                        }
+                        if (turn == truePosition.IsLastPlayerX())
+                        {
+                            Console.WriteLine("This should never happen x1");
+                        }
+                        Console.WriteLine("The Bot Will Now Play Their Move");
+                        move = bestMoveInPosition(truePosition, turn, 5);
+                        Console.WriteLine(move);
+                        truePosition.TogglePosition(move, turn);
+                        turn = !turn;
+                        if (truePosition.IsWinningMove(truePosition.GetLastXMove(), truePosition.GetLastYMove(), truePosition.IsLastPlayerX()))
+                        {
+                            truePosition.PrintPosition();
+                            Console.WriteLine("Game Over");
+                            return;
+                        }
                     }
                 }
             }
